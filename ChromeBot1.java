@@ -1,4 +1,3 @@
-package ChromeBot;
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -10,16 +9,24 @@ import java.awt.geom.*;
 import java.awt.Rectangle;
 import java.awt.*;
 import javax.swing.*;
-public class ChromeBot1 {
-    int x;
-    int y;
-    int width;
-    int height;
-    int thresh;
-    int thresh_;
-    Robot robot;
-    Rectangle rect;
-    boolean isDino;
+import java.lang.Thread;
+public class ChromeBot1 extends Thread implements Runnable{
+    public int x;
+    public int y;
+    public int width;
+    public int height;
+    public int thresh;
+    public int thresh_;
+    public Robot robot;
+    public Rectangle rect;
+    public boolean isDino;
+    public boolean isTranslated = false;
+    //Unparametized Constructor
+    public ChromeBot1(){
+        this(0,0,0,0);
+        System.out.println("ChromeBot created");
+    }
+
     public ChromeBot1(int x1,int y1,int width1,int height1){
         try{
             robot=new Robot();
@@ -30,7 +37,7 @@ public class ChromeBot1 {
         x=x1;
         y=y1;
         width=width1;
-        height=height1;
+        height=height1; 
         rect=new Rectangle(x,y,width,height);
     }
     public boolean jump() throws AWTException{
@@ -39,6 +46,7 @@ public class ChromeBot1 {
         int height2;
         Color c;
         robot.keyPress(KeyEvent.VK_DOWN);
+        robot.mouseWheel(-6);
         BufferedImage image=robot.createScreenCapture(rect);
         width2 = image.getWidth();
         height2 = image.getHeight();
@@ -50,15 +58,16 @@ public class ChromeBot1 {
                 sum+=c.getGreen();
                 }
             }
+        //System.out.println(this.toString() + sum);
         if(sum<=thresh&&isDino==true ){
-        robot.delay(250);
+        robot.delay(100);
         robot.keyRelease(KeyEvent.VK_DOWN);
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.delay(200);
         robot.keyRelease(KeyEvent.VK_SPACE);
         robot.keyPress(KeyEvent.VK_DOWN);
-        }
-        if( sum>=2000000){throw new AWTException("Error"); 
+        }//"Sum of the pixel color components is exceedingly beyond the threshold"
+        if( sum>=2000000){throw new AWTException("Sum of the pixel color components is exceedingly beyond the threshold"); 
         }  
         if(isDino==false){
             if(sum>=thresh){
@@ -77,6 +86,7 @@ public class ChromeBot1 {
         int sum= 0;  
         Color c;
         robot.keyPress(KeyEvent.VK_DOWN);
+        robot.mouseWheel(-6);
         BufferedImage image=robot.createScreenCapture(rect);
         width=image.getWidth();
          height=image.getHeight();
@@ -88,19 +98,20 @@ public class ChromeBot1 {
                 sum+=c.getGreen();
             }
         }
+        //System.out.println(this.toString() + sum);
         if(sum>=thresh_){
-            robot.delay(50);
+            robot.delay(80);
             robot.keyRelease(KeyEvent.VK_DOWN);
             robot.keyPress(KeyEvent.VK_SPACE);
             robot.delay(200);
             robot.keyRelease(KeyEvent.VK_SPACE);
             robot.keyPress(KeyEvent.VK_DOWN);
         }
-        if( sum>=2000000) {throw new AWTException("Error"); 
+        if( sum>=2000000) {throw new AWTException("Sum of the pixel color components is exceedingly beyond the threshold"); 
         }
         return sum;
     }
-    public int restart() throws AWTException{
+    public int restart(boolean state) throws AWTException{
         int width2;
         int height2;
         int sum2=0;
@@ -116,56 +127,125 @@ public class ChromeBot1 {
                 sum2+=c.getGreen();
                 }
         }
-        if(sum2<=thresh){
+        //System.out.println(this.toString() + sum2);
+        if((state==true&&sum2<=thresh)||(state==false&&sum2>=thresh_)){
+            robot.keyRelease(KeyEvent.VK_DOWN);
             robot.mouseMove(x,y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(200);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseMove(x,y+200);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseMove(x+80,y+80);
         }
-        if(sum2>=2000000){throw new AWTException("Error"); 
+        if(sum2>=2000000){throw new AWTException("Sum of the pixel color components is exceedingly beyond the threshold"); 
                 }
         return sum2;
-    } 
+    }//Button postion initialisation method();
     public void init(){
-        robot.mouseMove(x,y);
+        robot.mouseMove(x+width/2,y+height/2);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.delay(50);
         robot.keyRelease(KeyEvent.VK_SPACE);
-        robot.mouseMove(x,y+200);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-    }
+        robot.mouseMove(x+80,y+80);
 
+    }
+    //public test method(non-static);
+    public int test() throws AWTException{
+        int width;
+        int height;
+        int sum=0;
+        Color c;
+        BufferedImage image=robot.createScreenCapture(rect);
+        width =  image.getWidth();
+        height = image.getHeight();
+        for(int i=0;i<width;i+=1){
+            for(int j=0;j<height;j+=1){
+                c=new Color(image.getRGB(i,j));
+                sum+=c.getRed();
+                sum+=c.getBlue();
+                sum+=c.getGreen();
+                }
+        }
+        //System.out.println(this.toString() + sum2);
+        if(sum>=2000000){throw new AWTException("Sum of the pixel color components is exceedingly beyond the threshold"); 
+                }
+        System.out.println(sum);
+        return sum;
+    } 
+    //ChromeBot position translation method(non-static);
+    public void translate(int a,int b){
+        if(this.isTranslated==false){
+        this.x=this.x+a;
+        this.y=this.y+b;
+        this.isTranslated = true;
+        }
+    }
+    //Overriding the run() method() of the Thread class;
+    //The run() method() is also encapsulated in the Runnable interface;
     public static void main(String[] args){
+        ChromeBot1 Dinosaur=new ChromeBot1(185,282,50,50);
+        ChromeBot1 Button=new ChromeBot1(318,264,50,50);
+        ChromeBot1 Modulator=new ChromeBot1(153,240,50,50);
+        Dinosaur.thresh = 1800000;
+        Dinosaur.thresh_=100000;  
+        Modulator.thresh=50000;
+        Button.thresh=1600000; 
+        Button.thresh_=300000;
+        Dinosaur.isDino=true;
+        Modulator.isDino=false;
+        Button.init();  
+        while(true){       
+            try{   
+                boolean state = Modulator.jump();
+                Button.restart(state);
+                if(state==true){
+                    Dinosaur.jump();
+                }  
+                if(state==false){
+                    Dinosaur.scale();
+                }
+            } 
+            catch(AWTException e){
+            e.printStackTrace();
+        }     
+        }
+    }
+        
+    //public static void main() function;
+    @Override 
+    public void run(){
         ChromeBot1 Dinosaur=new ChromeBot1(300,308,50,50);
         ChromeBot1 Button=new ChromeBot1(321,257,50,50);
         ChromeBot1 Modulator=new ChromeBot1(227,175,50,50);
-        Dinosaur.thresh=1860000000;
-        Dinosaur.thresh_=100000000;
+        /*while(true){
+            try{
+        ChromeBot1 Button=new ChromeBot1(135,380,50,50);
+        Button.jump();
+            }catch(AWTException E){
+            System.err.println(E.toString());}
+        }*/
+        Dinosaur.thresh=1860000;
+        Dinosaur.thresh_=100000;
         Modulator.thresh=50000;
         Button.thresh=1400000; 
         Dinosaur.isDino=true;
         Modulator.isDino=false;
         Button.init();    
         while(true){            
-            try{    
-                Button.restart();
-                if(Modulator.jump()==true){
-                     Dinosaur.jump();
-                }  
-                if  (Modulator.jump()==false){
+            try{
+                boolean state = Modulator.jump();
+                Button.restart(state);
+                if(state==true){
+                    Dinosaur.jump();
+                }
+                if(state ==false){
                     Dinosaur.scale();
                 }
             }   
             catch(AWTException e){
-            e.printStackTrace();
-             System.out.println("Missing colour fragment");
-            }     
+            System.err.println(e.toString());
+            }    
         }
-    } 
+    }
 }                                                                
